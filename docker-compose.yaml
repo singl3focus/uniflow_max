@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - TZ=Europe/Moscow
+      - POSTGRES_DB=${PG_DATABASE_NAME}
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+    ports:
+      - ${PG_EXTENDED_PORT}:5432
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+
+  migrator:
+    build:
+      context: .
+      dockerfile: build/docker/migrations/Dockerfile
+      args:
+        MIGRATIONS_DIR: ${MIGRATIONS_DIR}
+        TZ: Europe/Moscow
+    environment:
+      - PG_DSN=${PG_DSN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grpc-server:
+    build:
+      context: .
+      dockerfile: build/docker/project/Dockerfile
+      args:
+        TZ: Europe/Moscow
+    ports:
+      - ${GRPC_EXTEND_PORT}:${GRPC_PORT}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_started
+
+volumes:
+  postgres_volume:
