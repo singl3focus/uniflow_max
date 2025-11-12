@@ -42,10 +42,7 @@ func (c Config) HTTPPort() int {
 
 func (c Config) MaxBotToken() string {
 	token := os.Getenv(maxBotToken)
-	if token == "" {
-		panic("var is empty: " + maxBotToken)
-	}
-
+	// MAX_BOT_TOKEN может быть пустым - интеграция с MAX опциональна
 	return token
 }
 

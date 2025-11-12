@@ -28,6 +28,17 @@ type AuthWithMAXResponse struct {
 	Token     string `json:"token"` // JWT token для дальнейшей аутентификации
 }
 
+// AuthWithMAX godoc
+// @Summary      Аутентификация через MAX
+// @Description  Создает или получает пользователя по MAX User ID и возвращает JWT токен
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body AuthWithMAXRequest true "MAX User ID"
+// @Success      200 {object} AuthWithMAXResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /auth/max [post]
 func (h *AuthHandler) AuthWithMAX(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)

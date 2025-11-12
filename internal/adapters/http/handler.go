@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/singl3focus/uniflow/internal/adapters/http/handlers"
 	"github.com/singl3focus/uniflow/internal/adapters/http/middleware"
@@ -25,6 +26,11 @@ func NewHandler(log logger.Logger, uc *usecase.Usecase, maxWebhook http.Handler)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
 	})
+
+	// Swagger documentation
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/singl3focus/uniflow/config"
+	_ "github.com/singl3focus/uniflow/docs" // Swagger docs
 	inhttp "github.com/singl3focus/uniflow/internal/adapters/http"
 	"github.com/singl3focus/uniflow/internal/adapters/max"
 	"github.com/singl3focus/uniflow/internal/adapters/postgres"
@@ -17,9 +19,38 @@ import (
 	zerologger "github.com/singl3focus/uniflow/pkg/logger/zerolog-wrap"
 )
 
+// @title           UniFlow API
+// @version         1.0
+// @description     API для личного ассистента продуктивности UniFlow
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.email  support@uniflow.example.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:50031
+// @BasePath  /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT токен в формате: Bearer {token}
+
+var (
+	configPath string
+)
+
+func init() {
+	flag.StringVar(&configPath, "config-path", "config.env", "path to config file")
+}
+
 func main() {
+	flag.Parse()
+
 	cfg := config.NewConfig(config.ENV)
-	if err := cfg.Load("config.env"); err != nil {
+	if err := cfg.Load(configPath); err != nil {
 		panic(err)
 	}
 
@@ -38,19 +69,38 @@ func main() {
 		} else {
 			log.Info("MAX client initialized successfully")
 
-			// Настройка webhook если указан URL
+			// Создание обработчика обновлений UniFlow
+			updateHandler := max.NewUniFlowUpdateHandler(maxClient, uc, log)
+
+			// Выбор режима: webhook или long polling
 			if cfg.MaxWebhookURL() != "" {
+				// Режим webhook (для продакшена с публичным URL)
 				ctx := context.Background()
 				if err := maxClient.SetWebhook(ctx, cfg.MaxWebhookURL()); err != nil {
 					log.Error("failed to set MAX webhook", "error", err)
 				} else {
 					log.Info("MAX webhook set successfully", "url", cfg.MaxWebhookURL())
 				}
-			}
 
-			// Создание обработчика webhook
-			updateHandler := &max.DefaultUpdateHandler{}
-			maxWebhook = max.NewWebhookHandler(maxClient, updateHandler)
+				// Создание HTTP обработчика для webhook
+				maxWebhook = max.NewWebhookHandler(maxClient, updateHandler)
+			} else {
+				// Режим long polling (для локальной разработки)
+				log.Info("MAX webhook URL not set, using long polling mode")
+
+				// Запускаем обработку обновлений в отдельной горутине
+				go func() {
+					ctx := context.Background()
+					log.Info("Starting MAX bot updates polling")
+
+					for update := range maxClient.GetUpdates(ctx) {
+						// Обрабатываем каждое обновление
+						updateHandler.HandleUpdate(update)
+					}
+
+					log.Info("MAX bot updates polling stopped")
+				}()
+			}
 		}
 	} else {
 		log.Warn("MAX bot token not configured, MAX integration disabled")

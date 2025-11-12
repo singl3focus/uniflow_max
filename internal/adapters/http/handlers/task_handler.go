@@ -33,6 +33,18 @@ type UpdateTaskStatusRequest struct {
 	Status string `json:"status"`
 }
 
+// GetTasks godoc
+// @Summary      Получить все задачи пользователя
+// @Description  Возвращает список всех задач текущего пользователя
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        X-User-ID header string true "User ID"
+// @Success      200 {object} map[string]interface{} "tasks: array of Task objects"
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /tasks [get]
+// @Security     BearerAuth
 func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)
@@ -61,6 +73,18 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetTasksToday godoc
+// @Summary      Получить задачи на сегодня
+// @Description  Возвращает список задач с дедлайном на сегодня
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        X-User-ID header string true "User ID"
+// @Success      200 {object} map[string]interface{} "tasks: array of Task objects"
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /tasks/today [get]
+// @Security     BearerAuth
 func (h *TaskHandler) GetTasksToday(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)
@@ -89,6 +113,20 @@ func (h *TaskHandler) GetTasksToday(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// CreateTask godoc
+// @Summary      Создать новую задачу
+// @Description  Создает новую задачу с привязкой к контексту (опционально)
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        X-User-ID header string true "User ID"
+// @Param        request body CreateTaskRequest true "Данные задачи"
+// @Success      201 {object} models.Task
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      401 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Router       /tasks [post]
+// @Security     BearerAuth
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)
