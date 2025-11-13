@@ -1,6 +1,9 @@
-[1mcmd\project\main.go:25[22m:10: [31mError return value of `cfg.Load` is not checked[0m (errcheck)
-	cfg.Load("config.env")
-	        [33m^[0m
-[1minternal\adapters\grpc\interceptors.go:52[22m:17: [31mError return value of `grpc.SetHeader` is not checked[0m (errcheck)
-		grpc.SetHeader(ctx, metadata.Pairs(RequestIDHeader, requestID))
-		              [33m^[0m
+[1mcmd\project\main.go:61[22m:18: [31mError return value of `repo.Close` is not checked[0m (errcheck)
+	defer repo.Close()
+	                [33m^[0m
+[1minternal\adapters\http\response\response.go:15[22m:27: [31mError return value of `(*encoding/json.Encoder).Encode` is not checked[0m (errcheck)
+	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
+	                         [33m^[0m
+[1minternal\adapters\http\response\response.go:21[22m:27: [31mError return value of `(*encoding/json.Encoder).Encode` is not checked[0m (errcheck)
+	json.NewEncoder(w).Encode(data)
+	                         [33m^[0m

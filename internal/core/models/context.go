@@ -92,5 +92,6 @@ func (c *Context) Update(title, description, color *string, deadlineAt *time.Tim
 	if deadlineAt != nil {
 		c.DeadlineAt = deadlineAt
 	}
+	
 	c.UpdatedAt = time.Now()
 }

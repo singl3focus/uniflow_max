@@ -147,6 +147,37 @@ func (d *Database) GetTasksDueToday(ctx context.Context, userID models.UserID) (
 	return d.scanTasks(rows, op)
 }
 
+func (d *Database) SearchTasks(ctx context.Context, userID models.UserID, query string) ([]models.Task, error) {
+	const op = "postgres.SearchTasks"
+
+	searchQuery := "%" + query + "%"
+
+	sqlQuery, args, err := sqBuilder.
+		Select("id", "user_id", "context_id", "title", "description", "status", "due_at", "completed_at", "created_at", "updated_at").
+		From(tblTasks).
+		Where(sq.And{
+			sq.Eq{"user_id": userID},
+			sq.Or{
+				sq.ILike{"title": searchQuery},
+				sq.ILike{"description": searchQuery},
+			},
+		}).
+		OrderBy("created_at DESC").
+		ToSql()
+
+	if err != nil {
+		return nil, repository.ErrBuildQuery.SetPlace(op).SetCause(err)
+	}
+
+	rows, err := d.pool.Query(ctx, sqlQuery, args...)
+	if err != nil {
+		return nil, repository.ErrQueryFailed.SetPlace(op).SetCause(err)
+	}
+	defer rows.Close()
+
+	return d.scanTasks(rows, op)
+}
+
 func (d *Database) UpdateTask(ctx context.Context, task models.Task) error {
 	const op = "postgres.UpdateTask"
 

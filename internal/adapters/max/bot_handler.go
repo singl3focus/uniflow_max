@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/max-messenger/max-bot-api-client-go/schemes"
+
 	"github.com/singl3focus/uniflow/internal/core/usecase"
 	"github.com/singl3focus/uniflow/pkg/logger"
 )
@@ -146,7 +147,7 @@ func (h *UniFlowUpdateHandler) handleTodayCommand(ctx context.Context, userID in
 	}
 
 	// Получаем задачи на сегодня
-	tasks, err := h.usecase.GetTasksDueToday(ctx, user.ID)
+	tasks, err := h.usecase.GetTasksDueToday(ctx, user.ID.String())
 	if err != nil {
 		h.logger.Error("failed to get today tasks", "error", err, "user_id", user.ID)
 		h.sendMessage(ctx, userID, "❌ Ошибка при получении задач.")
@@ -192,7 +193,7 @@ func (h *UniFlowUpdateHandler) handleTasksCommand(ctx context.Context, userID in
 	}
 
 	// Получаем все задачи
-	tasks, err := h.usecase.GetTasksByUserID(ctx, user.ID)
+	tasks, err := h.usecase.GetTasksByUserID(ctx, user.ID.String())
 	if err != nil {
 		h.logger.Error("failed to get tasks", "error", err, "user_id", user.ID)
 		h.sendMessage(ctx, userID, "❌ Ошибка при получении задач.")

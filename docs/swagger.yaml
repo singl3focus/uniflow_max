@@ -1,11 +1,82 @@
 basePath: /api
 definitions:
-  github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse:
+  handlers.AuthWithMAXRequest:
     properties:
-      error:
+      max_user_id:
         type: string
     type: object
-  github_com_singl3focus_uniflow_internal_core_models.Context:
+  handlers.AuthWithMAXResponse:
+    properties:
+      max_user_id:
+        type: string
+      token:
+        description: JWT token
+        type: string
+      user_id:
+        type: string
+    type: object
+  handlers.CreateContextRequest:
+    properties:
+      color:
+        type: string
+      deadline_at:
+        description: ISO 8601 format
+        type: string
+      description:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  handlers.CreateTaskRequest:
+    properties:
+      context_id:
+        type: string
+      description:
+        type: string
+      due_at:
+        description: ISO 8601 format
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.UpdateContextRequest:
+    properties:
+      color:
+        type: string
+      deadline_at:
+        description: ISO 8601 format
+        type: string
+      description:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  handlers.UpdateTaskRequest:
+    properties:
+      context_id:
+        type: string
+      description:
+        type: string
+      due_at:
+        description: ISO 8601 format
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.UpdateTaskStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  models.Context:
     properties:
       color:
         description: Цвет для UI (HEX)
@@ -25,13 +96,13 @@ definitions:
       title:
         type: string
       type:
-        $ref: '#/definitions/github_com_singl3focus_uniflow_internal_core_models.ContextType'
+        $ref: '#/definitions/models.ContextType'
       updatedAt:
         type: string
       userID:
         type: string
     type: object
-  github_com_singl3focus_uniflow_internal_core_models.ContextType:
+  models.ContextType:
     enum:
     - subject
     - project
@@ -57,7 +128,7 @@ definitions:
     - ContextTypePersonal
     - ContextTypeWork
     - ContextTypeOther
-  github_com_singl3focus_uniflow_internal_core_models.Task:
+  models.Task:
     properties:
       completedAt:
         type: string
@@ -74,7 +145,7 @@ definitions:
       id:
         type: string
       status:
-        $ref: '#/definitions/github_com_singl3focus_uniflow_internal_core_models.TaskStatus'
+        $ref: '#/definitions/models.TaskStatus'
       title:
         type: string
       updatedAt:
@@ -82,7 +153,7 @@ definitions:
       userID:
         type: string
     type: object
-  github_com_singl3focus_uniflow_internal_core_models.TaskStatus:
+  models.TaskStatus:
     enum:
     - todo
     - in_progress
@@ -94,66 +165,20 @@ definitions:
     - TaskStatusInProgress
     - TaskStatusCompleted
     - TaskStatusCancelled
-  internal_adapters_http_handlers.AuthWithMAXRequest:
+  response.ErrorResponse:
     properties:
-      max_user_id:
+      error:
         type: string
     type: object
-  internal_adapters_http_handlers.AuthWithMAXResponse:
-    properties:
-      max_user_id:
-        type: string
-      token:
-        description: JWT token для дальнейшей аутентификации
-        type: string
-      user_id:
-        type: string
-    type: object
-  internal_adapters_http_handlers.CreateContextRequest:
-    properties:
-      color:
-        type: string
-      deadline_at:
-        description: ISO 8601 format
-        type: string
-      description:
-        type: string
-      subject_id:
-        type: string
-      title:
-        type: string
-      type:
-        type: string
-    type: object
-  internal_adapters_http_handlers.CreateTaskRequest:
-    properties:
-      context_id:
-        type: string
-      description:
-        type: string
-      due_at:
-        description: ISO 8601 format
-        type: string
-      title:
-        type: string
-    type: object
-host: localhost:50031
 info:
-  contact:
-    email: support@uniflow.example.com
-    name: API Support
+  contact: {}
   description: API для личного ассистента продуктивности UniFlow
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
   title: UniFlow API
   version: "1.0"
 paths:
   /auth/max:
     post:
-      consumes:
-      - application/json
       description: Создает или получает пользователя по MAX User ID и возвращает JWT
         токен
       parameters:
@@ -162,39 +187,27 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_http_handlers.AuthWithMAXRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/handlers.AuthWithMAXRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_adapters_http_handlers.AuthWithMAXResponse'
+            $ref: '#/definitions/handlers.AuthWithMAXResponse'
         "400":
-          description: Bad Request
+          description: Некорректный запрос
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Аутентификация через MAX
       tags:
       - auth
   /contexts:
     get:
-      consumes:
-      - application/json
       description: Возвращает список всех контекстов (учеба, проекты, личное) текущего
         пользователя
-      parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: 'contexts: array of Context objects'
@@ -204,64 +217,55 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Получить все контексты пользователя
       tags:
       - contexts
     post:
-      consumes:
-      - application/json
       description: Создает новый контекст (например, "Математика", "Курсовая работа")
       parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
       - description: Данные контекста
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_http_handlers.CreateContextRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/handlers.CreateContextRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_core_models.Context'
+            $ref: '#/definitions/models.Context'
         "400":
-          description: Bad Request
+          description: Некорректный запрос
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Неавторизованный доступ
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Создать новый контекст
       tags:
       - contexts
   /contexts/{id}:
-    get:
+    delete:
       consumes:
       - application/json
-      description: Возвращает подробную информацию о контексте
+      description: Удаляет контекст по ID
       parameters:
       - description: Context ID
-        in: query
+        in: path
         name: id
         required: true
         type: string
@@ -271,37 +275,140 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_core_models.Context'
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
-        "501":
-          description: Not Implemented
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить контекст
+      tags:
+      - contexts
+    get:
+      description: Возвращает подробную информацию о контексте
+      parameters:
+      - description: Context ID
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Context'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Контекст не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "501":
+          description: Метод не реализован
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Получить контекст по ID
       tags:
       - contexts
-  /tasks:
-    get:
+    patch:
       consumes:
       - application/json
-      description: Возвращает список всех задач текущего пользователя
+      description: Обновляет информацию о контексте. Все поля опциональны, обновляются
+        только переданные
       parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
+      - description: Context ID
+        in: path
+        name: id
         required: true
         type: string
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateContextRequest'
       produces:
       - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Context'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить контекст
+      tags:
+      - contexts
+  /search:
+    get:
+      description: Выполняет поиск по названиям и описаниям задач и контекстов
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: q
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'tasks: array of Task, contexts: array of Context'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Поиск по задачам и контекстам
+      tags:
+      - search
+  /tasks:
+    get:
+      description: Возвращает список всех задач текущего пользователя
       responses:
         "200":
           description: 'tasks: array of Task objects'
@@ -311,69 +418,205 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Получить все задачи пользователя
       tags:
       - tasks
     post:
-      consumes:
-      - application/json
       description: Создает новую задачу с привязкой к контексту (опционально)
       parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
       - description: Данные задачи
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_http_handlers.CreateTaskRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/handlers.CreateTaskRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_core_models.Task'
+            $ref: '#/definitions/models.Task'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Создать новую задачу
       tags:
       - tasks
-  /tasks/today:
-    get:
+  /tasks/{id}:
+    delete:
       consumes:
       - application/json
-      description: Возвращает список задач с дедлайном на сегодня
+      description: Удаляет задачу по ID
       parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
+      - description: Task ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
       - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить задачу
+      tags:
+      - tasks
+    get:
+      consumes:
+      - application/json
+      description: Возвращает подробную информацию о задаче
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить задачу по ID
+      tags:
+      - tasks
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет информацию о задаче. Все поля опциональны, обновляются
+        только переданные
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить задачу
+      tags:
+      - tasks
+  /tasks/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Изменяет статус задачи (todo, in_progress, completed, cancelled)
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новый статус
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTaskStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить статус задачи
+      tags:
+      - tasks
+  /tasks/today:
+    get:
+      description: Возвращает список задач с дедлайном на сегодня
       responses:
         "200":
           description: 'tasks: array of Task objects'
@@ -383,11 +626,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_singl3focus_uniflow_internal_adapters_http_response.ErrorResponse'
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Получить задачи на сегодня

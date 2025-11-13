@@ -43,6 +43,7 @@ type ContextRepository interface {
 	CreateContext(ctx context.Context, context models.Context) error
 	GetContextByID(ctx context.Context, id models.ContextID) (models.Context, error)
 	GetContextsByUserID(ctx context.Context, userID models.UserID) ([]models.Context, error)
+	SearchContexts(ctx context.Context, userID models.UserID, query string) ([]models.Context, error)
 	UpdateContext(ctx context.Context, context models.Context) error
 	DeleteContext(ctx context.Context, id models.ContextID) error
 }
@@ -54,6 +55,7 @@ type TaskRepository interface {
 	GetTasksByUserID(ctx context.Context, userID models.UserID) ([]models.Task, error)
 	GetTasksByContextID(ctx context.Context, contextID models.ContextID) ([]models.Task, error)
 	GetTasksDueToday(ctx context.Context, userID models.UserID) ([]models.Task, error)
+	SearchTasks(ctx context.Context, userID models.UserID, query string) ([]models.Task, error)
 	UpdateTask(ctx context.Context, task models.Task) error
 	DeleteTask(ctx context.Context, id models.TaskID) error
 }

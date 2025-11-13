@@ -16,6 +16,7 @@ import (
 	"github.com/singl3focus/uniflow/internal/adapters/max"
 	"github.com/singl3focus/uniflow/internal/adapters/postgres"
 	"github.com/singl3focus/uniflow/internal/core/usecase"
+	"github.com/singl3focus/uniflow/pkg/jwt"
 	zerologger "github.com/singl3focus/uniflow/pkg/logger/zerolog-wrap"
 )
 
@@ -23,16 +24,7 @@ import (
 // @version         1.0
 // @description     API для личного ассистента продуктивности UniFlow
 // @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.email  support@uniflow.example.com
-
-// @license.name  MIT
-// @license.url   https://opensource.org/licenses/MIT
-
-// @host      localhost:50031
-// @BasePath  /api
-
+// @BasePath        /api
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -56,9 +48,11 @@ func main() {
 
 	log := zerologger.NewZeroLogger(os.Stdout, cfg.LoggerLevel())
 
+	jm := jwt.NewJWTManager(cfg.JWTSecret(), time.Hour*24)
+
 	repo := postgres.NewPostgres(cfg.PGDSN())
 	defer repo.Close()
-	uc := usecase.NewUsecase(repo)
+	uc := usecase.NewUsecase(repo, jm)
 
 	// Инициализация MAX клиента (опционально)
 	var maxWebhook http.Handler
@@ -106,7 +100,7 @@ func main() {
 		log.Warn("MAX bot token not configured, MAX integration disabled")
 	}
 
-	handler := inhttp.NewHandler(log, uc, maxWebhook)
+	handler := inhttp.NewHandler(log, uc, maxWebhook, cfg.JWTSecret())
 
 	addr := fmt.Sprintf(":%d", cfg.HTTPPort())
 	srv := &http.Server{
