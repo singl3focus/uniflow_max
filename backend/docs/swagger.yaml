@@ -1,0 +1,645 @@
+basePath: /api
+definitions:
+  handlers.AuthWithMAXRequest:
+    properties:
+      max_user_id:
+        type: string
+    type: object
+  handlers.AuthWithMAXResponse:
+    properties:
+      max_user_id:
+        type: string
+      token:
+        description: JWT token
+        type: string
+      user_id:
+        type: string
+    type: object
+  handlers.CreateContextRequest:
+    properties:
+      color:
+        type: string
+      deadline_at:
+        description: ISO 8601 format
+        type: string
+      description:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  handlers.CreateTaskRequest:
+    properties:
+      context_id:
+        type: string
+      description:
+        type: string
+      due_at:
+        description: ISO 8601 format
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.UpdateContextRequest:
+    properties:
+      color:
+        type: string
+      deadline_at:
+        description: ISO 8601 format
+        type: string
+      description:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  handlers.UpdateTaskRequest:
+    properties:
+      context_id:
+        type: string
+      description:
+        type: string
+      due_at:
+        description: ISO 8601 format
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.UpdateTaskStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  models.Context:
+    properties:
+      color:
+        description: Цвет для UI (HEX)
+        type: string
+      createdAt:
+        type: string
+      deadlineAt:
+        description: 'Опционально: дедлайн контекста'
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      subjectID:
+        description: 'Опционально: ID предмета в расписании'
+        type: string
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/models.ContextType'
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  models.ContextType:
+    enum:
+    - subject
+    - project
+    - personal
+    - work
+    - other
+    type: string
+    x-enum-comments:
+      ContextTypeOther: Другое
+      ContextTypePersonal: Личное
+      ContextTypeProject: Проект
+      ContextTypeSubject: Учебный предмет
+      ContextTypeWork: Работа
+    x-enum-descriptions:
+    - Учебный предмет
+    - Проект
+    - Личное
+    - Работа
+    - Другое
+    x-enum-varnames:
+    - ContextTypeSubject
+    - ContextTypeProject
+    - ContextTypePersonal
+    - ContextTypeWork
+    - ContextTypeOther
+  models.Task:
+    properties:
+      completedAt:
+        type: string
+      contextID:
+        description: 'Опционально: привязка к контексту'
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      dueAt:
+        description: 'Опционально: дедлайн задачи'
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/models.TaskStatus'
+      title:
+        type: string
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  models.TaskStatus:
+    enum:
+    - todo
+    - in_progress
+    - completed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - TaskStatusTodo
+    - TaskStatusInProgress
+    - TaskStatusCompleted
+    - TaskStatusCancelled
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API для личного ассистента продуктивности UniFlow
+  termsOfService: http://swagger.io/terms/
+  title: UniFlow API
+  version: "1.0"
+paths:
+  /auth/max:
+    post:
+      description: Создает или получает пользователя по MAX User ID и возвращает JWT
+        токен
+      parameters:
+      - description: MAX User ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AuthWithMAXRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AuthWithMAXResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Аутентификация через MAX
+      tags:
+      - auth
+  /contexts:
+    get:
+      description: Возвращает список всех контекстов (учеба, проекты, личное) текущего
+        пользователя
+      responses:
+        "200":
+          description: 'contexts: array of Context objects'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить все контексты пользователя
+      tags:
+      - contexts
+    post:
+      description: Создает новый контекст (например, "Математика", "Курсовая работа")
+      parameters:
+      - description: Данные контекста
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateContextRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Context'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать новый контекст
+      tags:
+      - contexts
+  /contexts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет контекст по ID
+      parameters:
+      - description: Context ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить контекст
+      tags:
+      - contexts
+    get:
+      description: Возвращает подробную информацию о контексте
+      parameters:
+      - description: Context ID
+        in: query
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Context'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Контекст не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "501":
+          description: Метод не реализован
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить контекст по ID
+      tags:
+      - contexts
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет информацию о контексте. Все поля опциональны, обновляются
+        только переданные
+      parameters:
+      - description: Context ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateContextRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Context'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить контекст
+      tags:
+      - contexts
+  /search:
+    get:
+      description: Выполняет поиск по названиям и описаниям задач и контекстов
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: q
+        required: true
+        type: string
+      responses:
+        "200":
+          description: 'tasks: array of Task, contexts: array of Context'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Поиск по задачам и контекстам
+      tags:
+      - search
+  /tasks:
+    get:
+      description: Возвращает список всех задач текущего пользователя
+      responses:
+        "200":
+          description: 'tasks: array of Task objects'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить все задачи пользователя
+      tags:
+      - tasks
+    post:
+      description: Создает новую задачу с привязкой к контексту (опционально)
+      parameters:
+      - description: Данные задачи
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateTaskRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать новую задачу
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет задачу по ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить задачу
+      tags:
+      - tasks
+    get:
+      consumes:
+      - application/json
+      description: Возвращает подробную информацию о задаче
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить задачу по ID
+      tags:
+      - tasks
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет информацию о задаче. Все поля опциональны, обновляются
+        только переданные
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить задачу
+      tags:
+      - tasks
+  /tasks/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Изменяет статус задачи (todo, in_progress, completed, cancelled)
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новый статус
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTaskStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить статус задачи
+      tags:
+      - tasks
+  /tasks/today:
+    get:
+      description: Возвращает список задач с дедлайном на сегодня
+      responses:
+        "200":
+          description: 'tasks: array of Task objects'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить задачи на сегодня
+      tags:
+      - tasks
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT токен в формате: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
