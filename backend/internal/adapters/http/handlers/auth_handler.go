@@ -23,9 +23,9 @@ type AuthWithMAXRequest struct {
 }
 
 type AuthWithMAXResponse struct {
-	UserID    string `json:"user_id"`
-	MaxUserID string `json:"max_user_id"`
-	Token     string `json:"token"` // JWT token
+	UserID      string `json:"user_id"`
+	MaxUserID   string `json:"max_user_id"`
+	AccessToken string `json:"access_token"` // JWT token
 }
 
 // AuthWithMAX godoc
@@ -56,9 +56,9 @@ func (h *AuthHandler) AuthWithMAX(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := AuthWithMAXResponse{
-		UserID:    user.ID.String(),
-		MaxUserID: user.MaxUserID,
-		Token:     token,
+		UserID:      user.ID.String(),
+		MaxUserID:   user.MaxUserID,
+		AccessToken: token,
 	}
 
 	response.Success(w, http.StatusOK, resp)

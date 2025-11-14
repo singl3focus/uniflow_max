@@ -33,7 +33,7 @@ function LoginPage() {
       await loginWithMaxId(maxId);
       setLoginSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка входа. Проверьте MAX ID.');
+      setError(err.response?.data?.error || err.response?.data?.detail || 'Ошибка входа. Проверьте MAX ID.');
       setLoginSuccess(false);
     } finally {
       setLoading(false);

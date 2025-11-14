@@ -16,10 +16,10 @@ func ParseUserID(id string) (UserID, error) {
 }
 
 type User struct {
-	ID        UserID
-	MaxUserID string // ID пользователя в MAX
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        UserID    `json:"id"`
+	MaxUserID string    `json:"max_user_id"` // ID пользователя в MAX
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 var (

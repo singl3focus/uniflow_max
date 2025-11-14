@@ -15,10 +15,10 @@ function TaskPage() {
 
   useEffect(() => {
     if (!id) return;
-    loadTask(Number(id));
+    loadTask(id);
   }, [id]);
 
-  const loadTask = async (taskId: number) => {
+  const loadTask = async (taskId: string) => {
     setLoading(true);
     try {
       const all = await apiClient.getTasks();
@@ -42,7 +42,7 @@ function TaskPage() {
     }
   };
 
-  const toggleStatus = async (taskId: number, current: TaskStatus) => {
+  const toggleStatus = async (taskId: string, current: TaskStatus) => {
     // For now we mock the update locally (no network request).
     const next: TaskStatus = current === 'completed' ? 'todo' : 'completed';
     try {

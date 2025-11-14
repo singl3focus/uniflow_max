@@ -33,7 +33,7 @@ RUN apk add --no-cache ca-certificates tzdata && \
 COPY --from=builder /build/app .
 
 # Копируем конфигурационный файл
-COPY build/docker/configs/config.env ./config.env
+COPY docker/configs/config.env ./config.env
 
 # Создаем непривилегированного пользователя
 RUN addgroup -g 1000 appuser && \

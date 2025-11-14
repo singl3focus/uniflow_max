@@ -25,16 +25,16 @@ const (
 )
 
 type Task struct {
-	ID          TaskID
-	UserID      UserID
-	ContextID   *ContextID // Опционально: привязка к контексту
-	Title       string
-	Description string
-	Status      TaskStatus
-	DueAt       *time.Time // Опционально: дедлайн задачи
-	CompletedAt *time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          TaskID     `json:"id"`
+	UserID      UserID     `json:"user_id"`
+	ContextID   *ContextID `json:"context_id,omitempty"` // Опционально: привязка к контексту
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      TaskStatus `json:"status"`
+	DueAt       *time.Time `json:"due_at,omitempty"` // Опционально: дедлайн задачи
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 var (

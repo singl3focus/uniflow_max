@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/LoginPage';
+import LoginPageSimple from './pages/LoginPageSimple';
 import HomePage from './pages/HomePage';
-import TodayPage from './pages/TodayPage';
-import TaskPage from './pages/TaskPage';
-import ContextsPage from './pages/ContextsPage';
-import ContextPage from './pages/ContextPage';
+import TodayPageSimple from './pages/TodayPageSimple';
+import TaskPageSimple from './pages/TaskPageSimple';
+import TaskFormPageSimple from './pages/TaskFormPageSimple';
+import ContextsPageSimple from './pages/ContextsPageSimple';
+import ContextPageSimple from './pages/ContextPageSimple';
+import InboxPageSimple from './pages/InboxPageSimple';
+import SearchPageSimple from './pages/SearchPageSimple';
 import SchedulePage from './pages/SchedulePage';
 import ScheduleManagementPage from './pages/ScheduleManagementPage';
 import GroupsPage from './pages/GroupsPage';
@@ -30,12 +33,28 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
  return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPageSimple />} />
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <TodayPage />
+            <TodayPageSimple />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks/new"
+        element={
+          <ProtectedRoute>
+            <TaskFormPageSimple />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks/:id/edit"
+        element={
+          <ProtectedRoute>
+            <TaskFormPageSimple />
           </ProtectedRoute>
         }
       />
@@ -43,7 +62,7 @@ function App() {
         path="/tasks/:id"
         element={
           <ProtectedRoute>
-            <TaskPage />
+            <TaskPageSimple />
           </ProtectedRoute>
         }
       />
@@ -51,7 +70,7 @@ function App() {
         path="/today"
         element={
           <ProtectedRoute>
-            <TodayPage />
+            <TodayPageSimple />
           </ProtectedRoute>
         }
       />
@@ -67,7 +86,7 @@ function App() {
         path="/contexts"
         element={
           <ProtectedRoute>
-            <ContextsPage />
+            <ContextsPageSimple />
           </ProtectedRoute>
         }
       />
@@ -75,10 +94,26 @@ function App() {
           path="/contexts/:id"
           element={
             <ProtectedRoute>
-              <ContextPage />
+              <ContextPageSimple />
             </ProtectedRoute>
           }
         />
+      <Route
+        path="/inbox"
+        element={
+          <ProtectedRoute>
+            <InboxPageSimple />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <SearchPageSimple />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/schedule"
         element={

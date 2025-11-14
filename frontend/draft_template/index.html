@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniFlow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* Стили для модального окна уведомлений */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .notification-modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .notification-options {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .notification-group {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .notification-group:last-child {
+            border-bottom: none;
+        }
+
+        .group-title {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #666;
+            background: #f8f9fa;
+        }
+
+        .notification-option {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 16px;
+        }
+
+        .notification-option:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-option.selected {
+            background: #e3f2fd;
+        }
+
+        .checkmark {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .custom-notification {
+            padding: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .custom-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .custom-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .custom-add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+            max-width: 400px;
+            margin: 0 auto;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .screen {
+            display: none;
+            padding-bottom: 60px;
+            z-index: 900;
+        }
+        
+        .screen.active {
+            display: block;
+            z-index: 800;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 8px;
+            margin: -8px;
+        }
+
+        .date-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .current-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .date-main {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .date-secondary {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .progress-section {
+            background: white;
+            margin: 12px 16px;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 40%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .add-task-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s ease;
+            z-index: 100;
+        }
+
+        .add-task-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Стили для формы создания задачи */
+        .form-container {
+            background: white;
+            margin: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0.05);
+            overflow: hidden;
+        }
+
+        .form-section {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .datetime-inputs {
+            display: flex;
+            gap: 12px;
+        }
+
+        .datetime-inputs input {
+            flex: 1;
+        }
+
+        .notifications-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .notification-time {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .notification-remove {
+            background: none;
+            border: none;
+            color: #f44336;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: auto;
+        }
+
+        .add-notification-btn {
+            background: none;
+            border: 1px dashed #667eea;
+            color: #667eea;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .add-notification-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .form-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .form-button.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-button.secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .form-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0.1);
+        }
+
+        /* Стили для заметок в детальной карточке */
+        .notes-section {
+            margin-top: 20px;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .note-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .note-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        .note-meta {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .add-note-form {
+            margin-top: 16px;
+        }
+
+        .add-note-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .add-note-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .section {
+            background: white;
+            margin: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .section-header:hover {
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-count {
+            font-size: 12px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .collapse-icon {
+            font-size: 14px;
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+
+        .section.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            max-height: 1000px;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .section.collapsed .task-list {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .overdue .section-title {
+            color: #f44336;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border-top: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .task-item:hover {
+            background: #f8f9fa;
+        }
+
+        .task-color {
+            width: 4px;
+            height: 40px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .task-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .task-text {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox.checked {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            position: relative;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+        }
+
+        .overdue-task .task-text {
+            color: #f44336;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* Стили для экрана Контексты */
+        .context-tabs {
+            display: flex;
+            background: white;
+            margin: 0 16px;
+            border-radius: 12px 12px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .context-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .context-tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .context-list {
+            background: white;
+            margin: 0 16px 12px 16px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .context-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .context-item:last-child {
+            border-bottom: none;
+        }
+
+        .context-item:hover {
+            background: #f8f9fa;
+        }
+
+        .context-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .context-info {
+            flex: 1;
+        }
+
+        .context-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .context-stats {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .context-progress {
+            width: 60px;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-left: 12px;
+        }
+
+        .context-progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .add-context-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .add-context-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Стили для детальной карточки задачи */
+        .task-detail {
+            background: white;
+            margin: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .task-detail-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .task-detail-title {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .task-detail-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 2px;
+        }
+
+        .task-detail-checkbox.checked {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            position: relative;
+        }
+
+        .task-detail-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+        }
+
+        .task-detail-text {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .task-detail-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #666;
+            min-width: 80px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .context-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .priority-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .priority-high { background: #f44336; }
+        .priority-medium { background: #ff9800; }
+        .priority-low { background: #4CAF50; }
+
+        .task-detail-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .description-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .description-placeholder {
+            font-size: 14px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .attachments-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .attachment-item {
+            aspect-ratio: 1;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .attachment-item:hover {
+            background: #e9ecef;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .action-button {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-button.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            display: flex;
+            border-top: 1px solid #eee;
+            padding: 8px 0;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        /* Цвета для предметов */
+        .color-math { background: #667eea; }
+        .color-physics { background: #f093fb; }
+        .color-history { background: #f44336; }
+        .color-general { background: #4CAF50; }
+        .color-programming { background: #ff9800; }
+        .color-english { background: #9c27b0; }
+        .color-chemistry { background: #009688; }
+
+        .badge-math { background: #667eea; }
+        .badge-physics { background: #f093fb; }
+        .badge-history { background: #f44336; }
+        .badge-general { background: #4CAF50; }
+    </style>
+</head>
+<body>
+    <!-- Экран Сегодня -->
+    <div class="screen active" id="todayScreen">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="header-top">
+                <h1>Расписание</h1>
+            </div>
+            
+            <div class="date-navigation">
+                <button class="nav-button" onclick="changeDate(-1)">←</button>
+                
+                <div class="current-date">
+                    <div class="date-main" id="currentDate">Понедельник, 25 дек</div>
+                    <div class="date-secondary" id="currentWeek">Неделя 52</div>
+                </div>
+                
+                <button class="nav-button" onclick="changeDate(1)">→</button>
+            </div>
+        </div>
+   
+
+        <!-- Прогресс дня -->
+        <div class="progress-section">
+            <div class="progress-text">Прогресс дня: <span id="progressText">2/5</span> задач</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Просроченные задачи -->
+        <div class="section overdue" id="overdueSection">
+            <div class="section-header" onclick="toggleSection('overdueSection')">
+                <div class="section-title">
+                    Просроченные
+                    <span class="section-count" id="overdueCount">1 задача</span>
+                </div>
+                <div class="collapse-icon">▼</div>
+            </div>
+            <div class="task-list" id="overdueTasks">
+                <!-- Задачи будут добавляться динамически -->
+            </div>
+        </div>
+
+        <!-- Задачи на сегодня -->
+        <div class="section" id="todaySection">
+            <div class="section-header" onclick="toggleSection('todaySection')">
+                <div class="section-title">
+                    Задачи на выбранный день
+                    <span class="section-count" id="todayCount">4 задачи</span>
+                </div>
+                <div class="collapse-icon">▼</div>
+            </div>
+            <div class="task-list" id="todayTasks">
+                <!-- Задачи будут добавляться динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка добавления задачи -->
+    <button class="add-task-btn" onclick="openCreateTaskForm()">+</button>
+    </div>
+
+    <!-- Экран создания задачи -->
+    <div class="screen" id="createTaskScreen">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="header-top">
+                <button class="back-button" onclick="switchScreen('todayScreen')">← Назад</button>
+                <h1>Новая задача</h1>
+                <div style="width: 48px;"></div>
+            </div>
+        </div>
+
+        <!-- Форма создания задачи -->
+        <div class="form-container">
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">Название задачи *</label>
+                    <input type="text" class="form-input" id="taskTitle" placeholder="Что нужно сделать?">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <textarea class="form-textarea" id="taskDescription" placeholder="Дополнительные детали..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Предмет *</label>
+                    <select class="form-select" id="taskSubject">
+                        <option value="">Выберите предмет</option>
+                        <option value="math">Математика</option>
+                        <option value="physics">Физика</option>
+                        <option value="history">История</option>
+                        <option value="programming">Программирование</option>
+                        <option value="english">Английский язык</option>
+                        <option value="general">Общее</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-title">Срок выполнения</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Дата дедлайна *</label>
+                    <input type="date" class="form-input" id="taskDeadline">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Время дедлайна</label>
+                    <input type="time" class="form-input" id="taskTime">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-title">Уведомления</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Напоминания</label>
+                    <div class="notifications-list" id="notificationsList">
+                        <!-- Уведомления будут добавляться динамически -->
+                    </div>
+                    <button class="add-notification-btn" onclick="addNotification()">+ Добавить напоминание</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">Приоритет</label>
+                    <select class="form-select" id="taskPriority">
+                        <option value="low">Низкий</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="high">Высокий</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-actions">
+                    <button class="form-button secondary" onclick="switchScreen('todayScreen')">Отмена</button>
+                    <button class="form-button primary" onclick="createTask()">Создать задачу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран Контексты -->
+    <div class="screen" id="contextsScreen">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="header-top">
+                <h1>Контексты</h1>
+            </div>
+        </div>
+
+        <!-- Табы -->
+        <div class="context-tabs">
+            <button class="context-tab active" onclick="switchContextTab('subjects')">Предметы</button>
+            <button class="context-tab" onclick="switchContextTab('goals')">Цели</button>
+            <button class="context-tab" onclick="switchContextTab('schedule')">Расписание</button>
+        </div>
+
+        <!-- Список контекстов -->
+        <div class="context-list" id="contextsList">
+            <!-- Контексты будут добавляться динамически -->
+        </div>
+
+        <!-- Кнопка добавления -->
+        <button class="add-context-btn" onclick="addNewContext()">+</button>
+    </div>
+
+    <!-- Экран Входящие -->
+    <div class="screen" id="inboxScreen">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="header-top">
+                <h1>Входящие</h1>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    Непривязанные задачи
+                    <span class="section-count">3 задачи</span>
+                </div>
+                <div class="collapse-icon">▼</div>
+            </div>
+            <div class="task-list">
+                <div class="task-item">
+                    <div class="task-color color-general"></div>
+                    <div class="task-content">
+                        <div class="task-text">Записаться на консультацию</div>
+                        <div class="task-meta">
+                            <span>Общее</span>
+                            <span>Без срока</span>
+                        </div>
+                    </div>
+                    <div class="checkbox"></div>
+                </div>
+                <div class="task-item">
+                    <div class="task-color color-general"></div>
+                    <div class="task-content">
+                        <div class="task-text">Купить учебники</div>
+                        <div class="task-meta">
+                            <span>Общее</span>
+                            <span>Без срока</span>
+                        </div>
+                    </div>
+                    <div class="checkbox"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    Глобальный поиск
+                </div>
+            </div>
+            <div style="padding: 16px;">
+                <input type="text" placeholder="Поиск по задачам и конспектам..." style="
+                    width: 100%;
+                    padding: 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 14px;
+                ">
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран Детальной карточки задачи -->
+    <div class="screen" id="taskDetailScreen">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="header-top">
+                <button class="back-button" onclick="switchScreen('todayScreen')">← Назад</button>
+                <h1>Задача</h1>
+                <div style="width: 48px;"></div> <!-- Для выравнивания -->
+            </div>
+        </div>
+
+        <!-- Детальная карточка -->
+        <div class="task-detail" id="taskDetailContent">
+            <!-- Содержимое будет заполняться динамически -->
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <div class="nav">
+        <button class="nav-item active" onclick="switchScreen('todayScreen')">
+            <div class="nav-icon">📅</div>
+            <div>Расписание</div>
+        </button>
+        <button class="nav-item" onclick="switchScreen('contextsScreen')">
+            <div class="nav-icon">📚</div>
+            <div>Контексты</div>
+        </button>
+        <button class="nav-item" onclick="switchScreen('inboxScreen')">
+            <div class="nav-icon">📥</div>
+            <div>Входящие</div>
+        </button>
+    </div>
+    
+    <!-- Модальное окно выбора уведомления -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="notification-modal">
+            <div class="modal-header">
+                <div class="modal-title">Напоминание</div>
+                <button class="modal-close" onclick="closeNotificationModal()">×</button>
+            </div>
+            <div class="notification-options">
+                <div class="notification-group">
+                    <div class="group-title">В момент события</div>
+                    <button class="notification-option" onclick="selectNotification('В момент события', '0 minutes')">
+                        В момент события
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                </div>
+   
+                <div class="notification-group">
+                    <div class="group-title">Перед событием</div>
+                    <button class="notification-option" onclick="selectNotification('За 5 минут', '5 minutes')">
+                        За 5 минут
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 10 минут', '10 minutes')">
+                        За 10 минут
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 15 минут', '15 minutes')">
+                        За 15 минут
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 30 минут', '30 minutes')">
+                        За 30 минут
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                </div>
+   
+                <div class="notification-group">
+                    <div class="group-title">Заблаговременно</div>
+                    <button class="notification-option" onclick="selectNotification('За 1 час', '1 hour')">
+                        За 1 час
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 2 часа', '2 hours')">
+                        За 2 часа
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 1 день', '1 day')">
+                        За 1 день
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 2 дня', '2 days')">
+                        За 2 дня
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                    <button class="notification-option" onclick="selectNotification('За 1 неделю', '1 week')">
+                        За 1 неделю
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                </div>
+   
+                <div class="notification-group">
+                    <div class="group-title">Без напоминания</div>
+                    <button class="notification-option" onclick="selectNotification('Нет', 'none')">
+                        Нет
+                        <span class="checkmark" style="display: none;">✓</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные для демонстрации
+        const tasksByDate = {
+            '2024-12-24': [
+                { 
+                    id: 1, 
+                    text: 'Сдать конспект по Физике', 
+                    subject: 'Физика', 
+                    color: 'physics', 
+                    time: 'Вчера', 
+                    completed: false,
+                    priority: 'high',
+                    description: 'Конспект по теме "Термодинамика". Необходимо оформить все формулы и примеры задач.',
+                    attachments: ['📷', '📄', '📎'],
+                    createdAt: '2024-12-20',
+                    deadline: '2024-12-24'
+                }
+            ],
+            '2024-12-25': [
+                { 
+                    id: 2, 
+                    text: 'Решить ДЗ №5 по Математическому анализу', 
+                    subject: 'Математика', 
+                    color: 'math', 
+                    time: 'до 18:00', 
+                    completed: false,
+                    priority: 'medium',
+                    description: 'Задачи на дифференциальные уравнения. Особое внимание уделить задаче №3.',
+                    attachments: ['📄'],
+                    createdAt: '2024-12-22',
+                    deadline: '2024-12-25'
+                },
+                { 
+                    id: 3, 
+                    text: 'Подготовиться к семинару по Физике', 
+                    subject: 'Физика', 
+                    color: 'physics', 
+                    time: 'до 14:30', 
+                    completed: true,
+                    priority: 'high',
+                    description: 'Тема семинара: "Квантовая механика". Подготовить ответы на вопросы 1-5.',
+                    attachments: ['📷', '📎'],
+                    createdAt: '2024-12-23',
+                    deadline: '2024-12-25'
+                },
+                { 
+                    id: 4, 
+                    text: 'Прочитать главу 3 по Истории', 
+                    subject: 'История', 
+                    color: 'history', 
+                    time: 'до 22:00', 
+                    completed: false,
+                    priority: 'low',
+                    description: '',
+                    attachments: [],
+                    createdAt: '2024-12-24',
+                    deadline: '2024-12-25'
+                },
+                { 
+                    id: 5, 
+                    text: 'Написать план курсовой работы', 
+                    subject: 'Курсовая', 
+                    color: 'general', 
+                    time: 'до 20:00', 
+                    completed: true,
+                    priority: 'medium',
+                    description: 'Составить подробный план курсовой по теме "Влияние цифровизации на образование".',
+                    attachments: ['📄'],
+                    createdAt: '2024-12-20',
+                    deadline: '2024-12-25'
+                }
+            ]
+        };
+
+        const contexts = {
+            subjects: [
+                { id: 1, name: 'Математический анализ', color: 'math', tasks: 12, completed: 5, type: 'subject' },
+                { id: 2, name: 'Физика', color: 'physics', tasks: 8, completed: 3, type: 'subject' },
+                { id: 3, name: 'История', color: 'history', tasks: 6, completed: 2, type: 'subject' }
+            ],
+            goals: [
+                { id: 6, name: 'Закрыть сессию на отлично', color: 'general', tasks: 25, completed: 12, type: 'goal' },
+                { id: 7, name: 'Написать курсовую по Физике', color: 'physics', tasks: 8, completed: 2, type: 'goal' }
+            ],
+            schedule: [
+                { id: 9, name: 'Лекция по Математике', color: 'math', tasks: 0, completed: 0, type: 'schedule', time: 'ПН 10:00' },
+                { id: 10, name: 'Семинар по Физике', color: 'physics', tasks: 0, completed: 0, type: 'schedule', time: 'ВТ 14:00' }
+            ]
+        };
+
+        let currentDate = new Date('2024-12-25');
+        let currentContextTab = 'subjects';
+        let currentTask = null;
+        let notifications = [];
+
+        // Открытие детальной карточки задачи
+        function openTaskDetail(task, dateKey) {
+            currentTask = { ...task, dateKey };
+            renderTaskDetail();
+            switchScreen('taskDetailScreen');
+        }
+
+        // Отрисовка детальной карточки
+        function renderTaskDetail() {
+            const container = document.getElementById('taskDetailContent');
+            if (!currentTask) return;
+
+            const priorityText = {
+                'high': 'Высокий',
+                'medium': 'Средний',
+                'low': 'Низкий'
+            };
+
+            container.innerHTML = `
+                <div class="task-detail-header">
+                    <div class="task-detail-title">
+                        <div class="task-detail-checkbox ${currentTask.completed ? 'checked' : ''}" 
+                             onclick="toggleTaskDetail()"></div>
+                        <div class="task-detail-text">${currentTask.text}</div>
+                    </div>
+                    <div class="task-detail-meta">
+                        <div class="detail-row">
+                            <div class="detail-label">Предмет:</div>
+                            <div class="context-badge badge-${currentTask.color}">${currentTask.subject}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Приоритет:</div>
+                            <div class="priority-badge priority-${currentTask.priority}">
+                                ${priorityText[currentTask.priority]}
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Создана:</div>
+                            <div class="detail-value">${formatDisplayDate(currentTask.createdAt)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Дедлайн:</div>
+                            <div class="detail-value">${formatDisplayDate(currentTask.deadline)} ${currentTask.time.replace('до ', '')}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Статус:</div>
+                            <div class="detail-value">${currentTask.completed ? '✅ Выполнена' : '⏳ В работе'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="task-detail-body">
+                    <div class="detail-section">
+                        <div class="detail-section-title">Описание</div>
+                        <div class="description-text">
+                            ${currentTask.description ? currentTask.description : 
+                            '<div class="description-placeholder">Описание отсутствует</div>'}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <div class="detail-section-title">Вложения</div>
+                        ${currentTask.attachments.length > 0 ? `
+                            <div class="attachments-grid">
+                                ${currentTask.attachments.map((att, index) => `
+                                    <div class="attachment-item" onclick="openAttachment(${index})">
+                                        ${att}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<div class="description-placeholder">Вложения отсутствуют</div>'}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-button" onclick="editTask()">✏️ Редактировать</button>
+                        <button class="action-button primary" onclick="completeTask()">
+                            ${currentTask.completed ? '🔄 Возобновить' : '✅ Выполнить'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Форматирование даты для отображения
+        function formatDisplayDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'Сегодня';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Вчера';
+            } else {
+                const options = { day: 'numeric', month: 'long' };
+                return date.toLocaleDateString('ru-RU', options);
+            }
+        }
+
+        // Функция для форматирования времени уведомления
+        function formatNotificationTime(dateTime) {
+            const date = new Date(dateTime);
+            return date.toLocaleString('ru-RU', {
+                day: 'numeric',
+                month: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Переключение статуса задачи в детальной карточке
+        function toggleTaskDetail() {
+            if (currentTask) {
+                currentTask.completed = !currentTask.completed;
+                renderTaskDetail();
+                
+                // Обновляем задачу в основном списке
+                if (tasksByDate[currentTask.dateKey]) {
+                    const taskIndex = tasksByDate[currentTask.dateKey].findIndex(t => t.id === currentTask.id);
+                    if (taskIndex !== -1) {
+                        tasksByDate[currentTask.dateKey][taskIndex].completed = currentTask.completed;
+                    }
+                }
+            }
+        }
+
+        // Завершение задачи
+        function completeTask() {
+            toggleTaskDetail();
+            setTimeout(() => {
+                alert('Задача обновлена!');
+            }, 300);
+        }
+
+        // Редактирование задачи
+        function editTask() {
+            alert('Здесь будет открыт редактор задачи\nВ реальном приложении будет форма редактирования');
+        }
+
+        // Открытие вложения
+        function openAttachment(index) {
+            const attachmentTypes = ['📷', '📄', '📎'];
+            const typeNames = ['Фото', 'Документ', 'Ссылка'];
+            alert(`Открыть вложение: ${typeNames[index]}\nВ реальном приложении будет открытие файла`);
+        }
+
+        // Сворачивание/разворачивание секций
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('collapsed');
+        }
+
+        // Переключение экранов
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            document.getElementById(screenId).classList.add('active');
+            
+            // Обновляем навигацию только для основных экранов
+            if (['todayScreen', 'contextsScreen', 'inboxScreen'].includes(screenId)) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+            
+            if (screenId === 'contextsScreen') {
+                renderContexts();
+            }
+        }
+
+        // Остальные функции остаются без изменений...
+        function switchContextTab(tab) {
+            currentContextTab = tab;
+            document.querySelectorAll('.context-tab').forEach(tabElement => {
+                tabElement.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderContexts();
+        }
+
+        function renderContexts() {
+            const container = document.getElementById('contextsList');
+            const contextList = contexts[currentContextTab];
+            container.innerHTML = '';
+            
+            if (contextList.length === 0) {
+                container.innerHTML = '<div class="empty-state">Пока ничего нет</div>';
+                return;
+            }
+            
+            contextList.forEach(context => {
+                const progressPercent = context.tasks > 0 ? (context.completed / context.tasks) * 100 : 0;
+                const contextElement = document.createElement('div');
+                contextElement.className = 'context-item';
+                contextElement.innerHTML = `
+                    <div class="context-color color-${context.color}"></div>
+                    <div class="context-info">
+                        <div class="context-name">${context.name}</div>
+                        <div class="context-stats">
+                            ${context.type === 'schedule' ? context.time : `${context.completed}/${context.tasks} задач`}
+                        </div>
+                    </div>
+                    ${context.type !== 'schedule' ? `
+                        <div class="context-progress">
+                            <div class="context-progress-fill color-${context.color}" style="width: ${progressPercent}%"></div>
+                        </div>
+                    ` : ''}
+                `;
+                contextElement.addEventListener('click', () => {
+                    alert(`Открыть детали: ${context.name}`);
+                });
+                container.appendChild(contextElement);
+            });
+        }
+
+        function addNewContext() {
+            const contextType = currentContextTab === 'subjects' ? 'предмет' : 
+                              currentContextTab === 'goals' ? 'цель' : 'расписание';
+            const name = prompt(`Введите название нового ${contextType}:`);
+            if (name && name.trim()) {
+                alert(`Новый ${contextType} "${name}" создан!`);
+            }
+        }
+
+        function formatDate(date) {
+            const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+            const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+            const dayName = days[date.getDay()];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const startOfYear = new Date(date.getFullYear(), 0, 1);
+            const weekNumber = Math.ceil(((date - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+            return {
+                main: `${dayName}, ${day} ${month}`,
+                week: `Неделя ${weekNumber}`
+            };
+        }
+
+        function formatDateKey(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function updateInterface() {
+            const dateInfo = formatDate(currentDate);
+            document.getElementById('currentDate').textContent = dateInfo.main;
+            document.getElementById('currentWeek').textContent = dateInfo.week;
+            const dateKey = formatDateKey(currentDate);
+            const tasks = tasksByDate[dateKey] || [];
+            const overdueTasks = getOverdueTasks();
+            renderTasks(tasks, overdueTasks);
+            updateProgress(tasks);
+            updateCounts(tasks, overdueTasks);
+        }
+
+        function getOverdueTasks() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const overdue = [];
+            for (const [dateKey, tasks] of Object.entries(tasksByDate)) {
+                const taskDate = new Date(dateKey);
+                if (taskDate < today) {
+                    tasks.forEach(task => {
+                        if (!task.completed) {
+                            overdue.push({...task, overdueDate: dateKey});
+                        }
+                    });
+                }
+            }
+            return overdue;
+        }
+
+        function renderTasks(tasks, overdueTasks) {
+            const todayTasksContainer = document.getElementById('todayTasks');
+            const overdueTasksContainer = document.getElementById('overdueTasks');
+            todayTasksContainer.innerHTML = '';
+            overdueTasksContainer.innerHTML = '';
+            
+            if (overdueTasks.length > 0) {
+                overdueTasks.forEach(task => {
+                    const taskElement = createTaskElement(task, true);
+                    overdueTasksContainer.appendChild(taskElement);
+                });
+            } else {
+                overdueTasksContainer.innerHTML = '<div class="empty-state">Нет просроченных задач 🎉</div>';
+            }
+            
+            if (tasks.length > 0) {
+                tasks.forEach(task => {
+                    const taskElement = createTaskElement(task, false);
+                    todayTasksContainer.appendChild(taskElement);
+                });
+            } else {
+                todayTasksContainer.innerHTML = '<div class="empty-state">Нет задач на этот день 📝</div>';
+            }
+        }
+
+        function createTaskElement(task, isOverdue) {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = `task-item ${isOverdue ? 'overdue-task' : ''}`;
+            taskDiv.innerHTML = `
+                <div class="task-color color-${task.color}"></div>
+                <div class="task-content">
+                    <div class="task-text">${task.text}</div>
+                    <div class="task-meta">
+                        <span>${task.subject}</span>
+                        <span>${task.time}</span>
+                    </div>
+                </div>
+                <div class="checkbox ${task.completed ? 'checked' : ''}" 
+                     onclick="event.stopPropagation(); toggleTask(${task.id}, '${formatDateKey(currentDate)}')"></div>
+            `;
+            taskDiv.addEventListener('click', () => {
+                openTaskDetail(task, formatDateKey(currentDate));
+            });
+            return taskDiv;
+        }
+
+        function updateProgress(tasks) {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            const progressText = document.getElementById('progressText');
+            const progressFill = document.getElementById('progressFill');
+            if (totalTasks > 0) {
+                progressText.textContent = `${completedTasks}/${totalTasks}`;
+                progressFill.style.width = `${(completedTasks / totalTasks) * 100}%`;
+            } else {
+                progressText.textContent = '0/0';
+                progressFill.style.width = '0%';
+            }
+        }
+
+        function updateCounts(tasks, overdueTasks) {
+            document.getElementById('todayCount').textContent = `${tasks.length} ${getTaskWord(tasks.length)}`;
+            document.getElementById('overdueCount').textContent = `${overdueTasks.length} ${getTaskWord(overdueTasks.length)}`;
+        }
+
+        function getTaskWord(count) {
+            if (count % 10 === 1 && count % 100 !== 11) return 'задача';
+            if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'задачи';
+            return 'задач';
+        }
+
+        function toggleTask(taskId, dateKey) {
+            event.stopPropagation();
+            if (tasksByDate[dateKey]) {
+                const task = tasksByDate[dateKey].find(t => t.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    updateInterface();
+                    if (task.completed) {
+                        const completedCount = tasksByDate[dateKey].filter(t => t.completed).length;
+                        if (completedCount % 5 === 0) {
+                            setTimeout(() => {
+                                alert(`Отличная работа! Ты закрыл уже ${completedCount} задач сегодня. Продолжай в том же духе! 💪`);
+                            }, 300);
+                        }
+                    }
+                }
+            }
+        }
+
+        function changeDate(days) {
+            currentDate.setDate(currentDate.getDate() + days);
+            updateInterface();
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateInterface();
+            renderContexts();
+        });
+
+        // Открытие формы создания задачи
+        function openCreateTaskForm() {
+            notifications = [];
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('taskSubject').value = '';
+            document.getElementById('taskDeadline').value = '';
+            document.getElementById('taskTime').value = '';
+            document.getElementById('taskPriority').value = 'medium';
+            updateNotificationsList();
+            switchScreen('createTaskScreen');
+        }
+
+        // Обновленные функции для работы с уведомлениями
+        function openNotificationModal() {
+            document.getElementById('notificationModal').classList.add('active');
+        }
+        
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.remove('active');
+        }
+        
+        // Обработчик клика по overlay для закрытия модального окна
+        document.getElementById('notificationModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeNotificationModal();
+            }
+        });
+
+        function selectNotification(text, value) {
+            // Сбрасываем выделение у всех опций
+            document.querySelectorAll('.notification-option').forEach(option => {
+                option.classList.remove('selected');
+                option.querySelector('.checkmark').style.display = 'none';
+            });
+            
+            // Находим и выделяем конкретную опцию, на которой произошло событие
+            const clickedOption = event.target.closest('.notification-option');
+            if (clickedOption) {
+                clickedOption.classList.add('selected');
+                clickedOption.querySelector('.checkmark').style.display = 'inline';
+            }
+            
+            // Добавляем уведомление в список
+            if (value !== 'none') {
+                const notificationId = Date.now();
+                notifications.push({
+                    id: notificationId,
+                    text: text,
+                    value: value
+                });
+                updateNotificationsList();
+            }
+            
+            // Закрываем модальное окно через короткую задержку
+            setTimeout(closeNotificationModal, 300);
+            
+            // Предотвращаем всплытие события, чтобы избежать нежелательных действий
+            event.stopPropagation();
+        }
+
+        // Функция добавления уведомления (вызывает открытие модального окна)
+        function addNotification() {
+            openNotificationModal();
+        }
+
+        // Удаление уведомления
+        function removeNotification(id) {
+            notifications = notifications.filter(notif => notif.id !== id);
+            updateNotificationsList();
+        }
+
+        // Обновление списка уведомлений
+        function updateNotificationsList() {
+            const container = document.getElementById('notificationsList');
+            container.innerHTML = '';
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #888; font-size: 14px;">Нет напоминаний</div>';
+                return;
+            }
+            
+            notifications.forEach(notification => {
+                const notificationElement = document.createElement('div');
+                notificationElement.className = 'notification-item';
+                notificationElement.innerHTML = `
+                    <div>🔔</div>
+                    <div class="notification-time">${notification.text}</div>
+                    <button class="notification-remove" onclick="removeNotification(${notification.id})">×</button>
+                `;
+                container.appendChild(notificationElement);
+            });
+        }
+
+        // Функция для расчета времени срабатывания уведомления
+        function calculateTriggerTime(deadlineDateTime, offset) {
+            const deadline = new Date(deadlineDateTime);
+            
+            switch(offset) {
+                case '0 minutes':
+                    return deadline;
+                case '5 minutes':
+                    return new Date(deadline.getTime() - 5 * 60 * 1000);
+                case '10 minutes':
+                    return new Date(deadline.getTime() - 10 * 60 * 1000);
+                case '15 minutes':
+                    return new Date(deadline.getTime() - 15 * 60 * 1000);
+                case '30 minutes':
+                    return new Date(deadline.getTime() - 30 * 60 * 1000);
+                case '1 hour':
+                    return new Date(deadline.getTime() - 60 * 60 * 1000);
+                case '2 hours':
+                    return new Date(deadline.getTime() - 2 * 60 * 60 * 1000);
+                case '1 day':
+                    return new Date(deadline.getTime() - 24 * 60 * 60 * 1000);
+                case '2 days':
+                    return new Date(deadline.getTime() - 2 * 24 * 60 * 1000);
+                case '1 week':
+                    return new Date(deadline.getTime() - 7 * 24 * 60 * 60 * 1000);
+                default:
+                    return deadline;
+            }
+        }
+
+        // Обновленная функция создания задачи
+        function createTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const subject = document.getElementById('taskSubject').value;
+            const deadline = document.getElementById('taskDeadline').value;
+            
+            if (!title || !subject || !deadline) {
+                alert('Пожалуйста, заполните обязательные поля (название, предмет и дата дедлайна)');
+                return;
+            }
+
+            const taskTime = document.getElementById('taskTime').value;
+            const deadlineDateTime = taskTime ? `${deadline}T${taskTime}` : `${deadline}T23:59`;
+
+            const taskId = Date.now();
+            const newTask = {
+                id: taskId,
+                text: title,
+                subject: getSubjectName(subject),
+                color: subject,
+                time: 'до ' + (taskTime || '23:59'),
+                completed: false,
+                priority: document.getElementById('taskPriority').value,
+                description: document.getElementById('taskDescription').value,
+                attachments: [],
+                createdAt: new Date().toISOString().split('T')[0],
+                deadline: deadline,
+                deadlineDateTime: deadlineDateTime,
+                notifications: notifications.map(notif => ({
+                    ...notif,
+                    triggerTime: calculateTriggerTime(deadlineDateTime, notif.value)
+                })),
+                notes: []
+            };
+
+            // Добавляем задачу в данные
+            if (!tasksByDate[deadline]) {
+                tasksByDate[deadline] = [];
+            }
+            tasksByDate[deadline].push(newTask);
+
+            alert('Задача успешно создана!');
+            switchScreen('todayScreen');
+            updateInterface();
+            notifications = []; // Сбрасываем уведомления после создания задачи
+        }
+
+        // Получение названия предмета по ключу
+        function getSubjectName(key) {
+            const subjects = {
+                'math': 'Математика',
+                'physics': 'Физика',
+                'history': 'История',
+                'programming': 'Программирование',
+                'english': 'Английский язык',
+                'general': 'Общее'
+            };
+            return subjects[key] || key;
+        }
+
+        // Добавление заметки к задаче
+        function addNoteToTask() {
+            const noteText = document.getElementById('newNoteText').value.trim();
+            if (!noteText) return;
+
+            if (!currentTask.notes) {
+                currentTask.notes = [];
+            }
+
+            const newNote = {
+                id: Date.now(),
+                text: noteText,
+                createdAt: new Date().toLocaleString('ru-RU', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+
+            currentTask.notes.push(newNote);
+            document.getElementById('newNoteText').value = '';
+            renderTaskDetail();
+
+            // Обновляем задачу в основном списке
+            if (tasksByDate[currentTask.dateKey]) {
+                const taskIndex = tasksByDate[currentTask.dateKey].findIndex(t => t.id === currentTask.id);
+                if (taskIndex !== -1) {
+                    tasksByDate[currentTask.dateKey][taskIndex].notes = currentTask.notes;
+                }
+            }
+        }
+
+        // Отрисовка детальной карточки (обновленная)
+        function renderTaskDetail() {
+            const container = document.getElementById('taskDetailContent');
+            if (!currentTask) return;
+
+            const priorityText = {
+                'high': 'Высокий',
+                'medium': 'Средний',
+                'low': 'Низкий'
+            };
+
+            container.innerHTML = `
+                <div class="task-detail-header">
+                    <div class="task-detail-title">
+                        <div class="task-detail-checkbox ${currentTask.completed ? 'checked' : ''}"
+                             onclick="toggleTaskDetail()"></div>
+                        <div class="task-detail-text">${currentTask.text}</div>
+                    </div>
+                    <div class="task-detail-meta">
+                        <div class="detail-row">
+                            <div class="detail-label">Предмет:</div>
+                            <div class="context-badge badge-${currentTask.color}">${currentTask.subject}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Приоритет:</div>
+                            <div class="priority-badge priority-${currentTask.priority}">
+                                ${priorityText[currentTask.priority]}
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Создана:</div>
+                            <div class="detail-value">${formatDisplayDate(currentTask.createdAt)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Дедлайн:</div>
+                            <div class="detail-value">${formatDisplayDate(currentTask.deadline)} ${currentTask.time.replace('до ', '')}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Статус:</div>
+                            <div class="detail-value">${currentTask.completed ? '✅ Выполнена' : '⏳ В работе'}</div>
+                        </div>
+                    </div>
+                <div class="task-detail-body">
+                    <div class="detail-section">
+                        <div class="detail-section-title">Описание</div>
+                        <div class="description-text">
+                            ${currentTask.description ? currentTask.description :
+                            '<div class="description-placeholder">Описание отсутствует</div>'}
+                        </div>
+                    
+                    <div class="detail-section">
+                        <div class="detail-section-title">Уведомления</div>
+                        ${currentTask.notifications && currentTask.notifications.length > 0 ? `
+                            <div class="notifications-list">
+                                ${currentTask.notifications.map(notif => `
+                                    <div class="notification-item">
+                                        <div>🔔</div>
+                                        <div class="notification-time">${notif.text}</div>
+                                        <div style="font-size: 12px; color: #888;">
+                                            ${formatNotificationTime(notif.triggerTime)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<div class="description-placeholder">Уведомления не настроены</div>'}
+                    </div>
+                    
+                    <div class="detail-section notes-section">
+                        <div class="detail-section-title">Заметки</div>
+                        <div class="notes-list" id="taskNotesList">
+                            ${currentTask.notes && currentTask.notes.length > 0 ?
+                                currentTask.notes.map(note => `
+                                    <div class="note-item">
+                                        <div class="note-text">${note.text}</div>
+                                        <div class="note-meta">
+                                            <span>${note.createdAt}</span>
+                                        </div>
+                                    </div>
+                                `).join('') :
+                                '<div class="description-placeholder">Заметок пока нет</div>'
+                            }
+                        </div>
+                        <div class="add-note-form">
+                            <input type="text" class="add-note-input" id="newNoteText" placeholder="Добавить заметку...">
+                            <button class="add-note-button" onclick="addNoteToTask()">Добавить</button>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-button" onclick="editTask()">✏️ Редактировать</button>
+                        <button class="action-button primary" onclick="completeTask()">
+                            ${currentTask.completed ? '🔄 Возобновить' : '✅ Выполнить'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -24,7 +24,7 @@ services:
   migrator:
     build:
       context: .
-      dockerfile: build/docker/migrations/Dockerfile
+      dockerfile: docker/migrations/Dockerfile
       args:
         MIGRATIONS_DIR: ${MIGRATIONS_DIR:-migrations}
         TZ: Europe/Moscow
@@ -41,12 +41,12 @@ services:
   app:
     build:
       context: .
-      dockerfile: build/docker/project/Dockerfile
+      dockerfile: docker/project/Dockerfile
       args:
         TZ: Europe/Moscow
     container_name: uniflow-app
     env_file:
-      - build/docker/configs/config.env
+      - docker/configs/config.env
     ports:
       - "${HTTP_PORT:-50031}:${HTTP_PORT:-50031}"
     restart: unless-stopped
@@ -71,4 +71,3 @@ networks:
 volumes:
   postgres_data:
     driver: local
-

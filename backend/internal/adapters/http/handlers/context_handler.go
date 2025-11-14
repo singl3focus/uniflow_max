@@ -122,7 +122,7 @@ func (h *ContextHandler) GetContext(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)
 
-	contextIDStr := r.URL.Query().Get("id")
+	contextIDStr := chi.URLParam(r, "id")
 	if contextIDStr == "" {
 		response.Error(w, http.StatusBadRequest, "context 'id' required")
 		return
@@ -203,7 +203,7 @@ func (h *ContextHandler) DeleteContext(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := h.log.WithContext(ctx)
 
-	contextIDStr := r.URL.Query().Get("id")
+	contextIDStr := chi.URLParam(r, "id")
 	if contextIDStr == "" {
 		response.Error(w, http.StatusBadRequest, "context id required")
 		return

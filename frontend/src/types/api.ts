@@ -97,9 +97,9 @@ export interface HTTPValidationError {
 export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface Task {
-  id: number;
-  user_id: number;
-  context_id?: number | null;
+  id: string; // UUID
+  user_id: string; // UUID
+  context_id?: string | null; // UUID
   title: string;
   description: string;
   status: TaskStatus;
@@ -112,7 +112,14 @@ export interface Task {
 export interface TaskCreate {
   title: string;
   description: string;
-  context_id?: number | null;
+  context_id?: string | null; // UUID
+  due_at?: string | null;
+}
+
+export interface TaskUpdate {
+  title?: string;
+  description?: string;
+  context_id?: string | null; // UUID
   due_at?: string | null;
 }
 
@@ -120,8 +127,8 @@ export interface TaskCreate {
 export type ContextType = 'subject' | 'project' | 'personal' | 'work' | 'other';
 
 export interface Context {
-  id: number;
-  user_id: number;
+  id: string; // UUID
+  user_id: string; // UUID
   type: ContextType;
   title: string;
   description: string;
@@ -130,5 +137,49 @@ export interface Context {
   deadline_at?: string | null; // ISO datetime
   created_at: string;
   updated_at: string;
+}
+
+export interface ContextCreate {
+  type: ContextType;
+  title: string;
+  description: string;
+  subject_id?: string | null;
+  color: string;
+  deadline_at?: string | null;
+}
+
+export interface ContextUpdate {
+  type?: ContextType;
+  title?: string;
+  description?: string;
+  subject_id?: string | null;
+  color?: string;
+  deadline_at?: string | null;
+}
+
+// Auth types
+export interface AuthWithMAXRequest {
+  max_user_id: string;
+}
+
+export interface AuthWithMAXResponse {
+  user_id: string; // UUID
+  max_user_id: string;
+  access_token: string; // JWT token
+}
+
+// Error response
+export interface ErrorResponse {
+  error: string;
+}
+
+// Delete response
+export interface DeleteResponse {
+  status: string;
+}
+
+// Status update response
+export interface StatusUpdateResponse {
+  status: string;
 }
 

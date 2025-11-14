@@ -26,16 +26,16 @@ const (
 )
 
 type Context struct {
-	ID          ContextID
-	UserID      UserID
-	Type        ContextType
-	Title       string
-	Description string
-	SubjectID   *string    // Опционально: ID предмета в расписании
-	Color       string     // Цвет для UI (HEX)
-	DeadlineAt  *time.Time // Опционально: дедлайн контекста
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          ContextID   `json:"id"`
+	UserID      UserID      `json:"user_id"`
+	Type        ContextType `json:"type"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	SubjectID   *string     `json:"subject_id,omitempty"`  // Опционально: ID предмета в расписании
+	Color       string      `json:"color"`                 // Цвет для UI (HEX)
+	DeadlineAt  *time.Time  `json:"deadline_at,omitempty"` // Опционально: дедлайн контекста
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
 var (
@@ -92,6 +92,6 @@ func (c *Context) Update(title, description, color *string, deadlineAt *time.Tim
 	if deadlineAt != nil {
 		c.DeadlineAt = deadlineAt
 	}
-	
+
 	c.UpdatedAt = time.Now()
 }
