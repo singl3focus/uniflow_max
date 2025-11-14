@@ -94,7 +94,7 @@ function ContextsPageSimple() {
           onClick={() => setCreateOpen(true)}
           style={{ width: '100%' }}
         >
-          + Создать контекст
+          Создать контекст
         </button>
       </div>
 

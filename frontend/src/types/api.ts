@@ -123,6 +123,9 @@ export interface TaskUpdate {
   due_at?: string | null;
 }
 
+// Note: API uses snake_case, but we keep it for consistency with backend
+// Consider transforming to camelCase in API client if needed
+
 // Contexts
 export type ContextType = 'subject' | 'project' | 'personal' | 'work' | 'other';
 

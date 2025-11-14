@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { AppStateProvider } from './contexts/AppStateContext';
+import { ToastProvider } from './contexts/ToastContext';
 import LoginPageSimple from './pages/LoginPageSimple';
 import HomePage from './pages/HomePage';
 import TodayPageSimple from './pages/TodayPageSimple';
@@ -32,8 +34,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
  return (
-    <Routes>
-      <Route path="/login" element={<LoginPageSimple />} />
+    <ToastProvider>
+      <AppStateProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPageSimple />} />
       <Route
         path="/"
         element={
@@ -195,6 +199,8 @@ function App() {
         }
       />
     </Routes>
+      </AppStateProvider>
+    </ToastProvider>
   );
 }
 

@@ -1,17 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import type { Task, Context } from '../types/api';
+import { useToast } from '../contexts/ToastContext';
+import { debounce } from '../lib/debounce';
+import { TaskCard } from '../components/TaskCard';
+import { ContextCard } from '../components/ContextCard';
 import LoupeIcon from '../materials/loupe-search-svgrepo-com.svg';
 
 function SearchPageSimple() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showError } = useToast();
   const [query, setQuery] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  // Debounced search function
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    setSearched(true);
+    console.log('[SearchPage] Searching for:', searchQuery);
+
+    try {
+      const results = await apiClient.search(searchQuery);
+      console.log('[SearchPage] Search results:', results);
+      setTasks(results.tasks || []);
+      setContexts(results.contexts || []);
+    } catch (error: any) {
+      console.error('[SearchPage] Search failed:', error);
+      showError('Не удалось выполнить поиск');
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
+
+  // Create debounced version
+  const debouncedSearch = useCallback(
+    debounce((searchQuery: string) => performSearch(searchQuery), 500),
+    [performSearch]
+  );
+
+  // Auto-search when query changes
+  useEffect(() => {
+    if (query.trim()) {
+      debouncedSearch(query);
+    }
+  }, [query, debouncedSearch]);
 
   // Restore state when returning from detail pages
   useEffect(() => {
@@ -21,30 +60,12 @@ function SearchPageSimple() {
       setTasks(tasks);
       setContexts(contexts);
       setSearched(searched);
-      // Clear the state to avoid restoring again
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, []);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-
-    setLoading(true);
-    setSearched(true);
-    console.log('[SearchPage] Searching for:', query);
-
-    try {
-      const results = await apiClient.search(query);
-      console.log('[SearchPage] Search results:', results);
-      console.log('[SearchPage] Tasks:', results.tasks);
-      console.log('[SearchPage] Contexts:', results.contexts);
-      setTasks(results.tasks || []);
-      setContexts(results.contexts || []);
-    } catch (error) {
-      console.error('[SearchPage] Search failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearch = () => {
+    performSearch(query);
   };
 
   const totalResults = tasks.length + contexts.length;
@@ -132,27 +153,13 @@ function SearchPageSimple() {
               </div>
               <div style={{ margin: 0 }}>
                 {contexts.map((ctx) => (
-                  <div
+                  <ContextCard
                     key={ctx.id}
-                    className="context-card"
-                    style={{ borderLeftColor: ctx.color || '#667eea', margin: '0 0 12px 0' }}
+                    context={ctx}
                     onClick={() => navigate(`/contexts/${ctx.id}`, {
                       state: { from: '/search', searchState: { query, tasks, contexts, searched } }
                     })}
-                  >
-                    <div className="context-header">
-                      <div className="context-title">{ctx.title}</div>
-                      <div className="context-type">
-                        {ctx.type === 'subject' ? 'Предмет' : 
-                         ctx.type === 'project' ? 'Проект' : 
-                         ctx.type === 'personal' ? 'Личное' : 
-                         ctx.type === 'work' ? 'Работа' : 'Другое'}
-                      </div>
-                    </div>
-                    {ctx.description && (
-                      <div className="context-description">{ctx.description}</div>
-                    )}
-                  </div>
+                  />
                 ))}
               </div>
             </div>
@@ -166,34 +173,13 @@ function SearchPageSimple() {
               </div>
               <div className="section" style={{ margin: 0 }}>
                 {tasks.map((task) => (
-                  <div
+                  <TaskCard
                     key={task.id}
-                    className="task-item"
-                  >
-                    <div className="task-checkbox">
-                      <input 
-                        type="checkbox" 
-                        checked={task.status === 'completed'}
-                        readOnly
-                        style={{ pointerEvents: 'none' }}
-                      />
-                    </div>
-                    <div className="task-content" onClick={() => navigate(`/tasks/${task.id}`, {
+                    task={task}
+                    onClick={() => navigate(`/tasks/${task.id}`, {
                       state: { from: '/search', searchState: { query, tasks, contexts, searched } }
-                    })}>
-                      <div className="task-header">
-                        <div className="task-color-indicator" style={{ background: task.status === 'completed' ? '#10B981' : '#3B82F6' }}></div>
-                        <div className={`task-text ${task.status === 'completed' ? 'completed' : ''}`}>
-                          {task.title}
-                        </div>
-                      </div>
-                      {task.description && (
-                        <div className="task-meta">
-                          <span>{task.description}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    })}
+                  />
                 ))}
               </div>
             </div>

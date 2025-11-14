@@ -62,9 +62,13 @@ func (d *Database) GetTaskByID(ctx context.Context, id models.TaskID) (models.Ta
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.Task{}, repository.ErrNotFound.SetPlace(op).SetCause(err)
+			return models.Task{}, repository.ErrNotFound.SetPlace(op).SetCause(
+				errors.New("task not found: id=" + id.String()),
+			)
 		}
-		return models.Task{}, repository.ErrQueryFailed.SetPlace(op).SetCause(err)
+		return models.Task{}, repository.ErrQueryFailed.SetPlace(op).SetCause(
+			errors.New("failed to get task: id=" + id.String() + ", err=" + err.Error()),
+		)
 	}
 
 	return task, nil

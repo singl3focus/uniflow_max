@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import type { Task } from '../types/api';
+import { useToast } from '../contexts/ToastContext';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
 
@@ -9,6 +10,7 @@ function TaskPageSimple() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { showError, showSuccess } = useToast();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const loadedRef = useRef(false);
@@ -24,8 +26,9 @@ function TaskPageSimple() {
     try {
       const taskData = await apiClient.getTask(taskId);
       setTask(taskData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed loading task', err);
+      showError('Не удалось загрузить задачу');
     } finally {
       setLoading(false);
     }
@@ -48,8 +51,10 @@ function TaskPageSimple() {
       await apiClient.updateTaskStatus(task.id, newStatus);
       console.log('[TaskPage] Status updated successfully');
       setTask({ ...task, status: newStatus });
-    } catch (err) {
+      showSuccess('Статус задачи обновлен');
+    } catch (err: any) {
       console.error('[TaskPage] Failed updating task:', err);
+      showError('Не удалось обновить статус задачи');
     }
   };
 
@@ -57,9 +62,11 @@ function TaskPageSimple() {
     if (!task || !confirm('Удалить задачу?')) return;
     try {
       await apiClient.deleteTask(task.id);
+      showSuccess('Задача удалена');
       navigate('/today');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed deleting task', err);
+      showError('Не удалось удалить задачу');
     }
   };
 

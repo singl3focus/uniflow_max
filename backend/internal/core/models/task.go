@@ -94,6 +94,21 @@ func (t *Task) ChangeStatus(status TaskStatus) error {
 	return nil
 }
 
+// Validate checks if task has required fields
+func (t *Task) Validate() error {
+	const op = "models.Task.Validate"
+
+	if t.Title == "" {
+		return ErrInvalidTaskTitle.SetPlace(op).SetCause(errors.New("title is required"))
+	}
+
+	if !isValidTaskStatus(t.Status) {
+		return ErrInvalidTaskStatus.SetPlace(op).SetCause(errors.New("invalid status"))
+	}
+
+	return nil
+}
+
 func isValidTaskStatus(s TaskStatus) bool {
 	switch s {
 	case TaskStatusTodo, TaskStatusInProgress, TaskStatusCompleted, TaskStatusCancelled:

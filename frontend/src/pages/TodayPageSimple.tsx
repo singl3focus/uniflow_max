@@ -2,15 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppState } from '../contexts/AppStateContext';
+import { useToast } from '../contexts/ToastContext';
 import type { Task } from '../types/api';
+import { TaskCard } from '../components/TaskCard';
 import { format, parseISO, addDays, isBefore, isWithinInterval, startOfDay, endOfDay, startOfToday } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
 
 function TodayPageSimple() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { tasks: allTasks, refreshTasks } = useAppState();
+  const { showError, showSuccess } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{ overdue: boolean; today: boolean }>({ overdue: true, today: true });
   const loadedRef = useRef(false);
@@ -25,12 +29,10 @@ function TodayPageSimple() {
   const loadTasksForDate = async () => {
     setLoading(true);
     try {
-      const fetched = await apiClient.getTasks();
-      console.log('[TodayPage] Loaded tasks:', fetched);
-      console.log('[TodayPage] First task:', fetched[0]);
-      setAllTasks(fetched);
+      await refreshTasks();
     } catch (error: any) {
       console.error('Error loading tasks:', error);
+      showError('Не удалось загрузить задачи');
       if (error.response?.status === 401) {
         navigate('/login', { replace: true });
       }
@@ -92,45 +94,22 @@ function TodayPageSimple() {
     try {
       await apiClient.updateTaskStatus(taskId, newStatus);
       console.log('[TodayPage] Task status updated, reloading tasks');
-      loadTasksForDate();
-    } catch (error) {
+      await refreshTasks();
+      showSuccess('Статус задачи обновлен');
+    } catch (error: any) {
       console.error('[TodayPage] Failed to update task:', error);
+      showError('Не удалось обновить статус');
     }
   };
 
   const TaskItem = ({ task, isOverdue = false }: { task: Task; isOverdue?: boolean }) => (
-    <div className="task-item">
-      <div className="task-checkbox">
-        <input 
-          type="checkbox" 
-          checked={task.status === 'completed'}
-          onChange={(e) => {
-            e.stopPropagation();
-            toggleTaskStatus(task.id, task.status);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
-      <div className="task-content" onClick={() => navigate(`/tasks/${task.id}`)}>
-        <div className="task-header">
-          <div className="task-color-indicator" style={{ background: getContextColor(task.context_id || null) }}></div>
-          <div 
-            className={`task-text ${task.status === 'completed' ? 'completed' : ''}`}
-            style={{ color: isOverdue && task.status !== 'completed' ? '#f44336' : undefined }}
-          >
-            {task.title}
-          </div>
-        </div>
-        <div className="task-meta">
-          {task.description && <span>{task.description}</span>}
-          {task.due_at && (
-            <span className={isOverdue && task.status !== 'completed' ? 'task-due overdue' : 'task-due'}>
-              {format(parseISO(task.due_at), 'HH:mm', { locale: ru })}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
+    <TaskCard
+      task={task}
+      onToggle={toggleTaskStatus}
+      onClick={() => navigate(`/tasks/${task.id}`)}
+      isOverdue={isOverdue}
+      contextColor={getContextColor(task.context_id || null)}
+    />
   );
 
   return (
