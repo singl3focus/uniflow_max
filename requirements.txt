@@ -1,0 +1,19 @@
+# UniFlow MAX Bot - Go Backend Dependencies
+# This project uses Go modules for dependency management
+# All dependencies are listed in go.mod and go.sum files
+
+# Main dependencies:
+- github.com/max-messenger/max-bot-api-client-go v1.0.3
+- github.com/go-chi/chi/v5 v5.0.10
+- github.com/jackc/pgx/v5 v5.5.0
+- github.com/google/uuid v1.4.0
+- github.com/joho/godotenv v1.5.1
+- github.com/rs/zerolog v1.31.0
+- github.com/golang-jwt/jwt/v5 v5.2.0
+
+# To install dependencies, run:
+cd backend
+go mod download
+
+# Go version: 1.24
+# See go.mod for complete dependency list

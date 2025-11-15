@@ -1,5 +1,6 @@
 import { Task } from '../types/api';
 import { escapeHTML } from '../lib/sanitize';
+import { triggerHaptic } from '../lib/maxBridge';
 
 interface TaskCardProps {
   task: Task;
@@ -10,20 +11,28 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onToggle, onClick, isOverdue = false, contextColor = '#3B82F6' }: TaskCardProps) {
+  const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    triggerHaptic('selection');
+    onToggle?.(task.id, task.status);
+  };
+
+  const handleClick = () => {
+    triggerHaptic('impact');
+    onClick?.();
+  };
+
   return (
     <div className="task-item">
       <div className="task-checkbox">
         <input 
           type="checkbox" 
           checked={task.status === 'completed'}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggle?.(task.id, task.status);
-          }}
+          onChange={handleToggle}
           onClick={(e) => e.stopPropagation()}
         />
       </div>
-      <div className="task-content" onClick={onClick}>
+      <div className="task-content" onClick={handleClick}>
         <div className="task-header">
           <div className="task-color-indicator" style={{ background: contextColor }}></div>
           <div 

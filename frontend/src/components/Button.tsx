@@ -1,3 +1,5 @@
+import { triggerHaptic } from '../lib/maxBridge';
+
 interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
@@ -6,6 +8,7 @@ interface ButtonProps {
   type?: 'button' | 'submit';
   style?: React.CSSProperties;
   className?: string;
+  haptic?: boolean; // Включить тактильный отклик
 }
 
 export function Button({ 
@@ -15,7 +18,8 @@ export function Button({
   disabled = false,
   type = 'button',
   style = {},
-  className = ''
+  className = '',
+  haptic = true,
 }: ButtonProps) {
   const getClassName = () => {
     const base = 'btn';
@@ -25,11 +29,18 @@ export function Button({
     return `${base} ${variantClass} ${className}`.trim();
   };
 
+  const handleClick = () => {
+    if (haptic) {
+      triggerHaptic('selection');
+    }
+    onClick?.();
+  };
+
   return (
     <button
       type={type}
       className={getClassName()}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       style={style}
     >

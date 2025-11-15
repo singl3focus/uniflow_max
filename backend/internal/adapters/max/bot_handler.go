@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/max-messenger/max-bot-api-client-go/schemes"
 
@@ -11,19 +12,28 @@ import (
 	"github.com/singl3focus/uniflow/pkg/logger"
 )
 
+// UserState представляет состояние диалога пользователя
+type UserState struct {
+	State      string // "creating_task", "editing_task", "creating_context", etc.
+	Data       map[string]interface{}
+	LastUpdate time.Time
+}
+
 // UniFlowUpdateHandler обработчик команд бота UniFlow
 type UniFlowUpdateHandler struct {
-	client  *Client
-	usecase *usecase.Usecase
-	logger  logger.Logger
+	client     *Client
+	usecase    *usecase.Usecase
+	logger     logger.Logger
+	userStates map[int64]*UserState // Хранение состояний пользователей
 }
 
 // NewUniFlowUpdateHandler создает обработчик команд UniFlow
 func NewUniFlowUpdateHandler(client *Client, uc *usecase.Usecase, log logger.Logger) *UniFlowUpdateHandler {
 	return &UniFlowUpdateHandler{
-		client:  client,
-		usecase: uc,
-		logger:  log,
+		client:     client,
+		usecase:    uc,
+		logger:     log,
+		userStates: make(map[int64]*UserState),
 	}
 }
 
@@ -56,17 +66,14 @@ func (h *UniFlowUpdateHandler) handleMessage(ctx context.Context, upd *schemes.M
 		return
 	}
 
-	// Обычное сообщение - предлагаем использовать Mini-App
-	response := "👋 Привет! Я UniFlow — твой ассистент продуктивности.\n\n" +
-		"Для работы с задачами и контекстами используй мини-приложение.\n" +
-		"Доступные команды:\n" +
-		"/today — задачи на сегодня\n" +
-		"/tasks — все задачи\n" +
-		"/help — помощь"
-
-	if err := h.client.SendMessage(ctx, userID, response); err != nil {
-		h.logger.Error("failed to send message", "error", err, "user_id", userID)
+	// Проверяем состояние пользователя
+	if state, exists := h.userStates[userID]; exists {
+		h.handleStateMessage(ctx, userID, text, state)
+		return
 	}
+
+	// Обычное сообщение - показываем главное меню
+	h.showMainMenu(ctx, userID)
 }
 
 // handleCommand обрабатывает команды бота
@@ -78,13 +85,30 @@ func (h *UniFlowUpdateHandler) handleCommand(ctx context.Context, userID int64, 
 
 	cmd := strings.ToLower(parts[0])
 
+	// Сбрасываем состояние при любой команде
+	delete(h.userStates, userID)
+
 	switch cmd {
 	case "/start":
 		h.handleStartCommand(ctx, userID)
+	case "/menu":
+		h.showMainMenu(ctx, userID)
 	case "/today":
 		h.handleTodayCommand(ctx, userID)
 	case "/tasks":
 		h.handleTasksCommand(ctx, userID)
+	case "/newtask":
+		h.handleNewTaskCommand(ctx, userID)
+	case "/contexts":
+		h.handleContextsCommand(ctx, userID)
+	case "/newcontext":
+		h.handleNewContextCommand(ctx, userID)
+	case "/search":
+		h.handleSearchCommand(ctx, userID, parts)
+	case "/cancel":
+		delete(h.userStates, userID)
+		h.sendMessage(ctx, userID, "❌ Действие отменено")
+		h.showMainMenu(ctx, userID)
 	case "/help":
 		h.handleHelpCommand(ctx, userID)
 	default:
@@ -97,170 +121,34 @@ func (h *UniFlowUpdateHandler) handleBotStarted(ctx context.Context, upd *scheme
 	userID := upd.User.UserId
 	h.logger.Info("bot started by user", "user_id", userID)
 
-	// Приветственное сообщение
-	response := "🎯 Добро пожаловать в UniFlow!\n\n" +
-		"Я помогу тебе организовать учебу и задачи.\n\n" +
-		"🔹 Открой мини-приложение для полного функционала\n" +
-		"🔹 Используй команды для быстрого доступа:\n\n" +
-		"/today — задачи на сегодня\n" +
-		"/tasks — все твои задачи\n" +
-		"/help — справка по командам"
-
-	if err := h.client.SendMessage(ctx, userID, response); err != nil {
-		h.logger.Error("failed to send welcome message", "error", err, "user_id", userID)
-	}
+	// Не отправляем приветственное сообщение здесь, так как при перезапуске бэкенда
+	// это событие приходит для всех пользователей, что вызывает спам.
+	// Вместо этого пользователь может использовать команду /start
 }
 
 // handleCallback обрабатывает callback от интерактивных кнопок
 func (h *UniFlowUpdateHandler) handleCallback(ctx context.Context, upd *schemes.MessageCallbackUpdate) {
 	userID := upd.Callback.User.UserId
 	payload := upd.Callback.Payload
+	callbackID := upd.Callback.CallbackID
 
 	h.logger.Info("received callback", "user_id", userID, "payload", payload)
 
-	// Здесь можно добавить обработку интерактивных кнопок
-	// Например: "task_complete_<id>", "task_postpone_<id>" и т.д.
-}
-
-// Команды
-
-func (h *UniFlowUpdateHandler) handleStartCommand(ctx context.Context, userID int64) {
-	response := "🎯 UniFlow — твой личный ассистент продуктивности!\n\n" +
-		"Я помогу тебе:\n" +
-		"✅ Организовать задачи по контекстам (учеба, проекты, личное)\n" +
-		"📅 Следить за дедлайнами\n" +
-		"🔔 Получать напоминания\n" +
-		"📊 Отслеживать прогресс\n\n" +
-		"Открой мини-приложение для начала работы!"
-
-	h.sendMessage(ctx, userID, response)
-}
-
-func (h *UniFlowUpdateHandler) handleTodayCommand(ctx context.Context, userID int64) {
-	// Получаем или создаем пользователя по MAX ID
-	maxUserID := fmt.Sprintf("%d", userID)
-	user, err := h.usecase.GetOrCreateUserByMaxID(ctx, maxUserID)
-	if err != nil {
-		h.logger.Error("failed to get user", "error", err, "max_user_id", maxUserID)
-		h.sendMessage(ctx, userID, "❌ Ошибка при получении данных пользователя.")
+	parts := strings.Split(payload, "_")
+	if len(parts) < 2 {
 		return
 	}
 
-	// Получаем задачи на сегодня
-	tasks, err := h.usecase.GetTasksDueToday(ctx, user.ID.String())
-	if err != nil {
-		h.logger.Error("failed to get today tasks", "error", err, "user_id", user.ID)
-		h.sendMessage(ctx, userID, "❌ Ошибка при получении задач.")
-		return
-	}
+	action := parts[0]
 
-	// Формируем ответ
-	if len(tasks) == 0 {
-		response := "✅ На сегодня задач нет!\n\n" +
-			"Отличная возможность запланировать что-то новое в мини-приложении."
-		h.sendMessage(ctx, userID, response)
-		return
-	}
-
-	response := fmt.Sprintf("📋 Задачи на сегодня (%d):\n\n", len(tasks))
-
-	for i, task := range tasks {
-		status := "⭕"
-		if task.Status == "completed" {
-			status = "✅"
-		}
-
-		timeStr := ""
-		if task.DueAt != nil {
-			timeStr = fmt.Sprintf(" ⏰ %s", task.DueAt.Format("15:04"))
-		}
-
-		response += fmt.Sprintf("%d. %s %s%s\n", i+1, status, task.Title, timeStr)
-	}
-
-	response += "\nОткрой мини-приложение для управления задачами!"
-	h.sendMessage(ctx, userID, response)
-}
-
-func (h *UniFlowUpdateHandler) handleTasksCommand(ctx context.Context, userID int64) {
-	// Получаем или создаем пользователя по MAX ID
-	maxUserID := fmt.Sprintf("%d", userID)
-	user, err := h.usecase.GetOrCreateUserByMaxID(ctx, maxUserID)
-	if err != nil {
-		h.logger.Error("failed to get user", "error", err, "max_user_id", maxUserID)
-		h.sendMessage(ctx, userID, "❌ Ошибка при получении данных пользователя.")
-		return
-	}
-
-	// Получаем все задачи
-	tasks, err := h.usecase.GetTasksByUserID(ctx, user.ID.String())
-	if err != nil {
-		h.logger.Error("failed to get tasks", "error", err, "user_id", user.ID)
-		h.sendMessage(ctx, userID, "❌ Ошибка при получении задач.")
-		return
-	}
-
-	// Формируем ответ
-	if len(tasks) == 0 {
-		response := "📝 У тебя пока нет задач!\n\n" +
-			"Создай первую задачу в мини-приложении."
-		h.sendMessage(ctx, userID, response)
-		return
-	}
-
-	// Группируем задачи по статусу
-	var active, completed []string
-	for _, task := range tasks {
-		taskStr := fmt.Sprintf("• %s", task.Title)
-		if task.DueAt != nil {
-			taskStr += fmt.Sprintf(" (до %s)", task.DueAt.Format("02.01"))
-		}
-
-		if task.Status == "completed" {
-			completed = append(completed, taskStr)
-		} else {
-			active = append(active, taskStr)
-		}
-	}
-
-	response := fmt.Sprintf("📝 Всего задач: %d\n\n", len(tasks))
-
-	if len(active) > 0 {
-		response += fmt.Sprintf("⭕ Активные (%d):\n", len(active))
-		// Показываем максимум 5 активных
-		for i, task := range active {
-			if i >= 5 {
-				response += fmt.Sprintf("...и ещё %d\n", len(active)-5)
-				break
-			}
-			response += task + "\n"
-		}
-		response += "\n"
-	}
-
-	if len(completed) > 0 {
-		response += fmt.Sprintf("✅ Завершено: %d\n", len(completed))
-	}
-
-	response += "\nОткрой мини-приложение для полного списка!"
-	h.sendMessage(ctx, userID, response)
-}
-
-func (h *UniFlowUpdateHandler) handleHelpCommand(ctx context.Context, userID int64) {
-	response := "📖 Справка по командам:\n\n" +
-		"/start — о боте\n" +
-		"/today — задачи на сегодня\n" +
-		"/tasks — все задачи\n" +
-		"/help — эта справка\n\n" +
-		"💡 Для полного функционала используй мини-приложение!"
-
-	h.sendMessage(ctx, userID, response)
-}
-
-// Вспомогательные методы
-
-func (h *UniFlowUpdateHandler) sendMessage(ctx context.Context, userID int64, text string) {
-	if err := h.client.SendMessage(ctx, userID, text); err != nil {
-		h.logger.Error("failed to send message", "error", err, "user_id", userID)
+	switch action {
+	case "task":
+		h.handleTaskCallback(ctx, userID, callbackID, parts)
+	case "context":
+		h.handleContextCallback(ctx, userID, callbackID, parts)
+	case "menu":
+		h.handleMenuCallback(ctx, userID, callbackID, parts)
+	case "date":
+		h.handleDateCallback(ctx, userID, callbackID, parts)
 	}
 }

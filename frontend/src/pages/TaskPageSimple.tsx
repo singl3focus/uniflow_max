@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import type { Task } from '../types/api';
 import { useToast } from '../contexts/ToastContext';
+import { useMaxBackButton } from '../hooks/useMaxBackButton';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
 
@@ -14,6 +15,9 @@ function TaskPageSimple() {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const loadedRef = useRef(false);
+
+  // Поддержка кнопки "Назад" MAX
+  useMaxBackButton(true);
 
   useEffect(() => {
     if (!id || loadedRef.current) return;

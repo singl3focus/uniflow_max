@@ -4,14 +4,14 @@ services:
     container_name: uniflow-postgres
     environment:
       - TZ=Europe/Moscow
-      - POSTGRES_DB=${PG_DATABASE_NAME:-auth}
+      - POSTGRES_DB=${PG_DATABASE_NAME:-uniflow}
       - POSTGRES_USER=${PG_USER:-postgres}
       - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
     ports:
       - "${PG_EXTENDED_PORT:-50040}:5432"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE_NAME:-auth}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE_NAME:-uniflow}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
         TZ: Europe/Moscow
     container_name: uniflow-migrator
     environment:
-      - PG_DSN=${PG_DSN:-host=postgres port=5432 dbname=auth user=postgres password=postgres sslmode=disable}
+      - PG_DSN=${PG_DSN:-host=postgres port=5432 dbname=uniflow user=postgres password=postgres sslmode=disable}
     depends_on:
       postgres:
         condition: service_healthy
